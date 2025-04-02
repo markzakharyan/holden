@@ -17,9 +17,9 @@ passport.use(
     (accessToken, refreshToken, profile, done) => {
       // Check if email is from UCSB (not required for now)
       const email = profile.emails?.[0]?.value;
-      // if (!email || !email.endsWith("@ucsb.edu")) {
-      //   return done(null, false, { message: "Only UCSB emails are allowed" });
-      // }
+      if (!email || !email.endsWith("@ucsb.edu")) {
+        return done(null, false, { message: "Only UCSB emails are allowed" });
+      }
       
       // Store tokens for later Google Calendar access
       const user = {

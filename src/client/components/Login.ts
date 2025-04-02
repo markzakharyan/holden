@@ -13,11 +13,9 @@ export const renderLoginPage = (): string => {
           Sign in with Google
         </a>
       </div>
-      <!--
-      <div style="margin-top: 1.5rem; color: #888;">
-        <p>UCSB email required</p>
+      <div style="margin-top: 0.5rem; color: #888; font-size: 0.9rem;">
+        <p>ucsb email required</p>
       </div>
-      -->
     </div>
   `;
 };
