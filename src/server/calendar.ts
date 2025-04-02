@@ -170,17 +170,38 @@ export const addCoursesToCalendar = async (
       quarterEnd.setDate(quarterStart.getDate() + 70);
       console.log(`Quarter end date set to ${quarterEnd.toISOString()}`);
       
+      // Create properly formatted ISO strings for start and end times
+      // We need to convert these to properly formatted local times with the correct timezone
+      const formatTimeWithTimeZone = (date: Date) => {
+        // Extract hours, minutes, seconds
+        const hours = date.getUTCHours();
+        const minutes = date.getUTCMinutes();
+        const seconds = date.getUTCSeconds();
+        
+        // Create a new date object using local date components but with the intended time
+        const localDate = new Date(
+          firstClassDate.getFullYear(),
+          firstClassDate.getMonth(),
+          firstClassDate.getDate(),
+          hours,
+          minutes,
+          seconds
+        );
+        
+        return localDate.toISOString();
+      };
+
       const event = {
         summary: cleanCourseCode,
         location: course.location,
         description: `${course.courseTitle}\nInstructor: ${course.instructor}`,
         start: {
-          dateTime: startTime.toISOString(),
+          dateTime: formatTimeWithTimeZone(startTime),
           timeZone: "America/Los_Angeles",
         },
         end: {
-          dateTime: endTime.toISOString(),
-          timeZone: "America/Los_Angeles",
+          dateTime: formatTimeWithTimeZone(endTime),
+          timeZone: "America/Los_Angeles", 
         },
         recurrence: [
           `RRULE:FREQ=WEEKLY;UNTIL=${formatDate(quarterEnd)};BYDAY=${validDays.join(",")}`,
@@ -198,9 +219,10 @@ export const addCoursesToCalendar = async (
       console.log(`Creating calendar event:
         Course: ${event.summary}
         Days: ${validDays.join(",")}
-        Start: ${event.start.dateTime}
-        End: ${event.end.dateTime}
+        Start: ${event.start.dateTime} (hours=${startTime.getUTCHours()}, minutes=${startTime.getUTCMinutes()})
+        End: ${event.end.dateTime} (hours=${endTime.getUTCHours()}, minutes=${endTime.getUTCMinutes()})
         Recurrence: ${event.recurrence[0]}
+        TimeZone: ${event.start.timeZone}
       `);
       
       // Insert event to calendar
@@ -233,6 +255,8 @@ export const addCoursesToCalendar = async (
 const formatDate = (date: Date): string => {
   // Format as YYYYMMDDTHHMMSSZ (RFC5545 format)
   // Make sure the date is in UTC for consistency
+  // America/Los_Angeles timezone is UTC-7 (PDT) or UTC-8 (PST)
+  // We need to ensure the date values remain the same when converting to UTC
   const utcDate = new Date(Date.UTC(
     date.getFullYear(),
     date.getMonth(),

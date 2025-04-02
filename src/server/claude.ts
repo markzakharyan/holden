@@ -319,26 +319,26 @@ function parseTimeRange(timeText: string, _quarterStartDate: Date): { startTime:
     endAmPm = eAmPm;
   }
   
-  // Create date objects for today with the course times
-  const today = new Date();
+  // Create date objects with the course times, using UTC to avoid timezone shifts
+  // This will ensure that the time is treated as local time in America/Los_Angeles
+  const startTime = new Date();
+  const endTime = new Date();
+  startTime.setMilliseconds(0); // Clear milliseconds
+  endTime.setMilliseconds(0);  // Clear milliseconds
   
-  // Create start time
-  const startTime = new Date(today);
+  // Convert 12-hour format to 24-hour for start time
   let parsedStartHour = parseInt(startHour);
-  // Convert 12-hour format to 24-hour
   if (startAmPm.toUpperCase() === 'PM' && parsedStartHour < 12) parsedStartHour += 12;
   if (startAmPm.toUpperCase() === 'AM' && parsedStartHour === 12) parsedStartHour = 0;
   
-  startTime.setHours(parsedStartHour, parseInt(startMinute), 0, 0);
-  
-  // Create end time
-  const endTime = new Date(today);
+  // Convert 12-hour format to 24-hour for end time
   let parsedEndHour = parseInt(endHour);
-  // Convert 12-hour format to 24-hour
   if (endAmPm.toUpperCase() === 'PM' && parsedEndHour < 12) parsedEndHour += 12;
   if (endAmPm.toUpperCase() === 'AM' && parsedEndHour === 12) parsedEndHour = 0;
   
-  endTime.setHours(parsedEndHour, parseInt(endMinute), 0, 0);
+  // Use setUTC methods to avoid timezone conversion issues
+  startTime.setUTCHours(parsedStartHour, parseInt(startMinute), 0, 0);
+  endTime.setUTCHours(parsedEndHour, parseInt(endMinute), 0, 0);
   
   // If end time is before start time, something went wrong
   if (endTime < startTime) {
