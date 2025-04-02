@@ -189,11 +189,17 @@ export const addCoursesToCalendar = async (
         const minutes = date.getUTCMinutes();
         const seconds = date.getUTCSeconds();
         
-        // Create a new date in the local system timezone
-        const localDate = new Date(year, month, day, hours, minutes, seconds);
+        // The issue here is that we need to properly represent local time (America/Los_Angeles)
+        // in ISO format while making sure Google Calendar interprets it correctly with the timezone
         
-        // Return ISO string that will be interpreted with the timeZone America/Los_Angeles
-        return localDate.toISOString();
+        // Create an ISO string in the format YYYY-MM-DDTHH:MM:SS
+        // This format without the Z suffix is treated as local time in the specified timezone
+        const pad = (num: number) => num.toString().padStart(2, '0');
+        const isoLocalString = 
+          `${year}-${pad(month + 1)}-${pad(day)}T${pad(hours)}:${pad(minutes)}:${pad(seconds)}`;
+        
+        // Return the ISO local datetime string - without Z suffix to avoid UTC interpretation
+        return isoLocalString;
       };
 
       const event = {
