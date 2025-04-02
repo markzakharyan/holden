@@ -8,6 +8,8 @@ import { parseGoldHtml } from "./claude";
 import dotenv from "dotenv";
 import path from "path";
 import multer from "multer";
+import { createClient } from "redis";
+import { RedisStore } from "connect-redis";
 
 // Load environment variables
 dotenv.config();
@@ -46,18 +48,82 @@ const upload = multer({
   }
 });
 
+// Set up session store based on environment
+let sessionConfig: session.SessionOptions = {
+  secret: process.env.SESSION_SECRET || "default_secret",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 24 * 60 * 60 * 1000, // 1 day
+  }
+};
+
+// Use Redis store in production, but provide a fallback
+if (process.env.NODE_ENV === "production") {
+  // Check if we should disable Redis (for environments without Redis)
+  const disableRedis = process.env.DISABLE_REDIS === "true";
+  
+  if (disableRedis) {
+    console.log("Redis explicitly disabled, using memory session store (not recommended for production)");
+  } else {
+    try {
+      // Initialize Redis client with limited retries
+      const redisClient = createClient({
+        url: process.env.REDIS_URL || "redis://localhost:6379",
+        socket: {
+          reconnectStrategy: (retries) => {
+            // Stop trying to reconnect after 5 attempts
+            if (retries > 5) {
+              console.log("Failed to connect to Redis after 5 attempts, using memory store");
+              return false;
+            }
+            return Math.min(retries * 100, 3000); // Increasing delay between attempts
+          }
+        }
+      });
+      
+      // Set up flag to prevent repeated error messages
+      let errorLogged = false;
+      redisClient.on('error', (err) => {
+        if (!errorLogged) {
+          console.error('Redis connection error:', err.message);
+          console.log('Will use memory store instead (not recommended for production)');
+          errorLogged = true;
+        }
+      });
+      
+      // Set a timeout for Redis connection
+      const connectPromise = redisClient.connect();
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Redis connection timeout")), 5000);
+      });
+      
+      // Try to connect with timeout
+      Promise.race([connectPromise, timeoutPromise])
+        .then(() => {
+          // Initialize Redis store
+          sessionConfig.store = new RedisStore({ 
+            client: redisClient,
+            prefix: "goldcal:"
+          });
+          console.log("Successfully connected to Redis");
+        })
+        .catch(err => {
+          console.log(`Redis connection failed: ${err.message}`);
+          console.log("Using memory session store (not recommended for production)");
+        });
+    } catch (error) {
+      console.error("Failed to initialize Redis store:", error);
+      console.log("Falling back to memory store (not recommended for production)");
+    }
+  }
+} else {
+  console.log("Using memory session store for development");
+}
+
 // Session middleware
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "default_secret",
-    resave: false,
-    saveUninitialized: false,
-    cookie: {
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 24 * 60 * 60 * 1000, // 1 day
-    },
-  })
-);
+app.use(session(sessionConfig));
 
 // Body parser middleware
 app.use(express.json({ limit: "10mb" }));

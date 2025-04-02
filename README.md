@@ -14,6 +14,7 @@ A simple web application that helps UCSB students add their class schedules to G
 - Node.js (v16+)
 - Google OAuth credentials
 - Anthropic API key
+- Redis (recommended for production, but optional with fallback)
 
 ## Setup
 
@@ -28,6 +29,7 @@ A simple web application that helps UCSB students add their class schedules to G
    GOOGLE_CLIENT_SECRET=your_google_client_secret
    ANTHROPIC_API_KEY=your_anthropic_api_key
    SESSION_SECRET=random_session_secret
+   REDIS_URL=redis://localhost:6379 # Required in production
    ```
 4. Start the development server:
    ```bash
@@ -37,7 +39,8 @@ A simple web application that helps UCSB students add their class schedules to G
 ## Available Scripts
 
 - `npm run dev` - Start the development server
-- `npm start` - Run the production server
+- `npm start` - Run the production server (requires Redis)
+- `npm run start:no-redis` - Run the production server without Redis
 - `npm run build` - Build the client for production
 - `npm test` - Run tests
 - `npm test:single "test name"` - Run a specific test
@@ -60,3 +63,4 @@ A simple web application that helps UCSB students add their class schedules to G
 - Claude API for image parsing
 - Google Calendar API for event creation
 - Passport.js for authentication
+- Redis for session storage in production
