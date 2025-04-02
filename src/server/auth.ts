@@ -12,7 +12,7 @@ passport.use(
       clientID: process.env.GOOGLE_CLIENT_ID || "",
       clientSecret: process.env.GOOGLE_CLIENT_SECRET || "",
       callbackURL: "/auth/google/callback",
-      scope: ["profile", "email", "https://www.googleapis.com/auth/calendar"],
+      scope: ["https://www.googleapis.com/auth/calendar"],
     },
     (accessToken, refreshToken, profile, done) => {
       // Check if email is from UCSB (not required for now)
