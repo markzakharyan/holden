@@ -319,8 +319,8 @@ function parseTimeRange(timeText: string, _quarterStartDate: Date): { startTime:
     endAmPm = eAmPm;
   }
   
-  // Create date objects with the course times, using UTC to avoid timezone shifts
-  // This will ensure that the time is treated as local time in America/Los_Angeles
+  // Create date objects with the course times
+  // IMPORTANT: These times represent local times in America/Los_Angeles timezone
   const startTime = new Date();
   const endTime = new Date();
   startTime.setMilliseconds(0); // Clear milliseconds
@@ -336,7 +336,9 @@ function parseTimeRange(timeText: string, _quarterStartDate: Date): { startTime:
   if (endAmPm.toUpperCase() === 'PM' && parsedEndHour < 12) parsedEndHour += 12;
   if (endAmPm.toUpperCase() === 'AM' && parsedEndHour === 12) parsedEndHour = 0;
   
-  // Use setUTC methods to avoid timezone conversion issues
+  // We use setUTCHours to store the local time (PST/PDT) in the UTC fields
+  // This avoids timezone conversion issues when these dates are later used
+  // The actual timezone handling happens in calendar.ts with the timeZone property
   startTime.setUTCHours(parsedStartHour, parseInt(startMinute), 0, 0);
   endTime.setUTCHours(parsedEndHour, parseInt(endMinute), 0, 0);
   

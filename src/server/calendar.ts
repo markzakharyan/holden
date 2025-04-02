@@ -171,23 +171,28 @@ export const addCoursesToCalendar = async (
       console.log(`Quarter end date set to ${quarterEnd.toISOString()}`);
       
       // Create properly formatted ISO strings for start and end times
-      // We need to convert these to properly formatted local times with the correct timezone
+      // The times stored in date.startTime and date.endTime have their time components
+      // set using setUTCHours in claude.ts, but we need to correctly parse these
+      // as America/Los_Angeles local time
       const formatTimeWithTimeZone = (date: Date) => {
-        // Extract hours, minutes, seconds
+        // The issue: In claude.ts, times are set using setUTCHours() which puts the time
+        // in the UTC field of the Date object. But these times are meant to be local times
+        // in America/Los_Angeles.
+        
+        // Get correct date from firstClassDate
+        const year = firstClassDate.getFullYear();
+        const month = firstClassDate.getMonth();
+        const day = firstClassDate.getDate();
+        
+        // Get the actual intended time from the UTC fields
         const hours = date.getUTCHours();
         const minutes = date.getUTCMinutes();
         const seconds = date.getUTCSeconds();
         
-        // Create a new date object using local date components but with the intended time
-        const localDate = new Date(
-          firstClassDate.getFullYear(),
-          firstClassDate.getMonth(),
-          firstClassDate.getDate(),
-          hours,
-          minutes,
-          seconds
-        );
+        // Create a new date in the local system timezone
+        const localDate = new Date(year, month, day, hours, minutes, seconds);
         
+        // Return ISO string that will be interpreted with the timeZone America/Los_Angeles
         return localDate.toISOString();
       };
 
