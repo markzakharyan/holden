@@ -14,6 +14,18 @@ dotenv.config();
 
 const app = express();
 
+// Force HTTPS in production
+if (process.env.NODE_ENV === "production") {
+  // Trust the proxy to get the correct protocol information
+  app.enable("trust proxy");
+  app.use((req, res, next) => {
+    if (!req.secure) {
+      return res.redirect(`https://${req.headers.host}${req.url}`);
+    }
+    next();
+  });
+}
+
 // Configure multer for file uploads
 const upload = multer({
   storage: multer.memoryStorage(),
