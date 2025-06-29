@@ -393,7 +393,6 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // Start server
-const PORT = process.env.PORT || 3000;
-ViteExpress.listen(app, Number(PORT), () =>
-  console.log(`Server is listening on port ${PORT}...`)
+ViteExpress.listen(app, 8080, () =>
+  console.log("Server is listening on port 8080...")
 );
