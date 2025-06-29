@@ -172,7 +172,7 @@ export const parseGoldHtml = async (
           const timeText = timeElem.text().replace(/Time/g, '').trim();
           console.log('Time text:', timeText);
           
-          const { startTime, endTime } = parseTimeRange(timeText, quarterStartDate);
+          const { startTime, endTime } = parseTimeRange(timeText);
           
           // Get location - try different selectors
           let locationElem = $(sessionElement).find('.col-lg-location a, [class*="location"] a, a[href*="map"]').first();
