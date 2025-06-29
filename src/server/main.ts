@@ -171,13 +171,73 @@ app.get("/auth/logout", (req, res): void => {
   });
 });
 
+
+interface QuarterDates {
+  startDate: Date;
+  endDate: Date;
+  quarterName: string;
+}
+
+function getQuarterDates(quarterType: "current" | "next"): QuarterDates {
+  const now = new Date();
+  let year = now.getFullYear();
+  let month = now.getMonth(); // 0-indexed
+
+  let startDate: Date;
+  let quarterName: string;
+
+  // Define approximate start months for each quarter (0-indexed)
+  const fallStartMonth = 8; // September
+  const winterStartMonth = 0; // January
+  const springStartMonth = 3; // April
+  const summerStartMonth = 5; // June
+
+  // Determine current quarter start date
+  if (quarterType === "current") {
+    if (month >= fallStartMonth) {
+      startDate = new Date(year, fallStartMonth, 20); // Approx Sept 20
+      quarterName = "Fall";
+    } else if (month >= summerStartMonth) {
+      startDate = new Date(year, summerStartMonth, 20); // Approx June 20
+      quarterName = "Summer";
+    } else if (month >= springStartMonth) {
+      startDate = new Date(year, springStartMonth, 1); // Approx April 1
+      quarterName = "Spring";
+    } else {
+      startDate = new Date(year, winterStartMonth, 3); // Approx Jan 3
+      quarterName = "Winter";
+    }
+  } else { // quarterType === "next"
+    if (month >= fallStartMonth) { // Currently Fall, next is Winter of next year
+      startDate = new Date(year + 1, winterStartMonth, 3);
+      quarterName = "Winter";
+    } else if (month >= summerStartMonth) { // Currently Summer, next is Fall
+      startDate = new Date(year, fallStartMonth, 20);
+      quarterName = "Fall";
+    } else if (month >= springStartMonth) { // Currently Spring, next is Summer
+      startDate = new Date(year, summerStartMonth, 20);
+      quarterName = "Summer";
+    } else { // Currently Winter, next is Spring
+      startDate = new Date(year, springStartMonth, 1);
+      quarterName = "Spring";
+    }
+  }
+
+  // Calculate end date based on quarter type
+  const endDate = new Date(startDate);
+  const durationWeeks = (quarterName === "Summer") ? 6 : 10;
+  endDate.setDate(startDate.getDate() + (durationWeeks * 7));
+
+  return { startDate, endDate, quarterName };
+}
+
 // HTML schedule upload and processing
 app.post("/api/upload-schedule", ensureAuth, upload.single('htmlFile'), async (req, res): Promise<void> => {
   try {
-    const quarterStartDate = req.body.quarterStartDate;
+    const quarterType = req.body.quarterType as "current" | "next";
     
-    if (!req.file || !quarterStartDate) {
-      res.status(400).json({ error: "Missing required HTML file or quarter start date" });
+    if (!req.file || !quarterType) {
+      res.status(400).json({ error: "Missing required HTML file or quarter type" });
       return;
     }
 
@@ -188,18 +248,13 @@ app.post("/api/upload-schedule", ensureAuth, upload.single('htmlFile'), async (r
     const htmlContent = req.file.buffer.toString('utf-8');
     console.log("Converted to string, length:", htmlContent.length);
     
-    // Parse quarter start date and calculate end date (10 weeks later)
-    const startDate = new Date(quarterStartDate);
-    console.log("Quarter start date:", startDate.toISOString());
-    
-    // Calculate end date (10 weeks = 70 days after start)
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + 70); // 10 weeks * 7 days
-    console.log("Calculated quarter end date:", endDate.toISOString());
+    // Determine quarter start and end dates
+    const { startDate, endDate, quarterName } = getQuarterDates(quarterType);
+    console.log(`Using ${quarterName} Quarter: Start Date - ${startDate.toISOString()}, End Date - ${endDate.toISOString()}`);
     
     let courseSchedule;
     try {
-      // Pass the start date to the HTML parser, NOT the end date
+      // Pass the start date to the HTML parser
       courseSchedule = await parseGoldHtml(htmlContent, startDate);
       console.log("Successfully parsed schedule:", JSON.stringify(courseSchedule, null, 2));
     } catch (parseError) {
@@ -217,7 +272,7 @@ app.post("/api/upload-schedule", ensureAuth, upload.single('htmlFile'), async (r
     
     res.json({ 
       success: true, 
-      message: `Added ${eventIds.length} courses to your Google Calendar.`,
+      message: `Added ${eventIds.length} courses to your Google Calendar for ${quarterName} Quarter.`,
       courses: courseSchedule.map(c => c.courseCode),
       eventIds: eventIds, // Return the event IDs for debugging
     });
@@ -233,20 +288,16 @@ app.post("/api/upload-schedule", ensureAuth, upload.single('htmlFile'), async (r
 // Fallback endpoint for backward compatibility
 app.post("/api/upload-schedule-legacy", ensureAuth, async (req, res): Promise<void> => {
   try {
-    const { htmlData, quarterStartDate } = req.body;
+    const { htmlData, quarterType } = req.body;
     
-    if (!htmlData || !quarterStartDate) {
+    if (!htmlData || !quarterType) {
       res.status(400).json({ error: "Missing required fields" });
       return;
     }
     
-    console.log("Processing schedule HTML from JSON payload, quarter start date:", quarterStartDate);
-    const startDate = new Date(quarterStartDate);
-    
-    // Calculate end date (10 weeks = 70 days after start)
-    const endDate = new Date(startDate);
-    endDate.setDate(startDate.getDate() + 70); // 10 weeks * 7 days
-    console.log("Calculated quarter end date:", endDate.toISOString());
+    console.log("Processing schedule HTML from JSON payload, quarter type:", quarterType);
+    const { startDate, endDate, quarterName } = getQuarterDates(quarterType);
+    console.log(`Using ${quarterName} Quarter: Start Date - ${startDate.toISOString()}, End Date - ${endDate.toISOString()}`);
     
     let courseSchedule;
     try {
@@ -267,7 +318,7 @@ app.post("/api/upload-schedule-legacy", ensureAuth, async (req, res): Promise<vo
     
     res.json({ 
       success: true, 
-      message: `Added ${eventIds.length} courses to your Google Calendar.`,
+      message: `Added ${eventIds.length} courses to your Google Calendar for ${quarterName} Quarter.`,
       courses: courseSchedule.map(c => c.courseCode),
       eventIds: eventIds, // Return the event IDs for debugging
     });

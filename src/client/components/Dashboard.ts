@@ -17,16 +17,16 @@ export const renderDashboard = (authState: AuthState): string => {
       <h2>GOLD Schedule → Google Calendar</h2>
       
       <div class="form-group">
-        <label for="quarter-start">Quarter Start Date:</label>
-        <input 
-          type="date" 
-          id="quarter-start" 
+        <label for="quarter-type">Select Quarter:</label>
+        <select 
+          id="quarter-type" 
           class="form-control" 
-          required
-          value="2025-03-31"
           style="padding: 0.5rem; width: 100%; max-width: 300px; border: 1px solid #444; border-radius: 4px; background-color: #2a2a2a; color: white;"
         >
-        <p style="font-size: 0.8rem; margin-top: 0.5rem;">Quarter will end automatically after 10 weeks</p>
+          <option value="current">Current Quarter</option>
+          <option value="next">Next Quarter</option>
+        </select>
+        <p style="font-size: 0.8rem; margin-top: 0.5rem;">Summer quarters are 6 weeks, others are 10 weeks.</p>
       </div>
       
       <div id="upload-container" class="file-upload">
@@ -58,10 +58,10 @@ export const setupDashboardEvents = (): void => {
   const fileInfoContainer = document.getElementById('file-info-container');
   const fileInfoElement = document.getElementById('file-info');
   const submitBtn = document.getElementById('submit-btn') as HTMLButtonElement;
-  const quarterStartInput = document.getElementById('quarter-start') as HTMLInputElement;
+  const quarterTypeSelect = document.getElementById('quarter-type') as HTMLSelectElement;
   const messageContainer = document.getElementById('message-container');
   
-  if (!uploadContainer || !fileInput || !fileInfoContainer || !fileInfoElement || !submitBtn || !quarterStartInput || !messageContainer) {
+  if (!uploadContainer || !fileInput || !fileInfoContainer || !fileInfoElement || !submitBtn || !quarterTypeSelect || !messageContainer) {
     console.error('One or more dashboard elements not found');
     return;
   }
@@ -130,9 +130,9 @@ export const setupDashboardEvents = (): void => {
       return;
     }
     
-    const quarterStartDate = quarterStartInput.value;
-    if (!quarterStartDate) {
-      showMessage({ type: 'error', text: 'Please select the quarter start date.' });
+    const quarterType = quarterTypeSelect.value;
+    if (!quarterType) {
+      showMessage({ type: 'error', text: 'Please select the quarter type.' });
       return;
     }
     
@@ -143,7 +143,7 @@ export const setupDashboardEvents = (): void => {
       // Create a FormData object to send the file
       const formData = new FormData();
       formData.append('htmlFile', selectedFile);
-      formData.append('quarterStartDate', quarterStartDate);
+      formData.append('quarterType', quarterType);
       
       const response = await fetch("/api/upload-schedule", {
         method: "POST",
