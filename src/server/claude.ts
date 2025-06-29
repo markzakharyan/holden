@@ -285,7 +285,7 @@ function parseDaysOfWeek(daysText: string): string[] {
  * @param quarterStartDate Reference date for setting the correct date
  * @returns Object with start and end times as Date objects
  */
-function parseTimeRange(timeText: string, _quarterStartDate: Date): { startTime: Date, endTime: Date } {
+function parseTimeRange(timeText: string): { startTime: Date, endTime: Date } {
   // Try different time format patterns
   let timeMatch = timeText.match(/(\d+):(\d+)\s+(AM|PM)-(\d+):(\d+)\s+(AM|PM)/i);
   

@@ -49,7 +49,7 @@ const upload = multer({
 });
 
 // Set up session store based on environment
-let sessionConfig: session.SessionOptions = {
+const sessionConfig: session.SessionOptions = {
   secret: process.env.SESSION_SECRET || "default_secret",
   resave: false,
   saveUninitialized: false,
@@ -180,8 +180,8 @@ interface QuarterDates {
 
 function getQuarterDates(quarterType: "current" | "next"): QuarterDates {
   const now = new Date();
-  let year = now.getFullYear();
-  let month = now.getMonth(); // 0-indexed
+  const year = now.getFullYear();
+  const month = now.getMonth(); // 0-indexed
 
   let startDate: Date;
   let quarterName: string;
@@ -393,6 +393,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 // Start server
-ViteExpress.listen(app, 8080, () =>
-  console.log("Server is listening on port 8080...")
+const PORT = process.env.PORT || 3000;
+ViteExpress.listen(app, Number(PORT), () =>
+  console.log(`Server is listening on port ${PORT}...`)
 );
